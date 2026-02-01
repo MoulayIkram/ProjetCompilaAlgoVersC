@@ -4,9 +4,6 @@
 #include <stdbool.h>
 #include "ast.h"
 
-// =====================
-// Type system (for semantic checking)
-// =====================
 
 typedef enum {
     TY_ERROR = 0,
@@ -39,9 +36,6 @@ struct Type {
     } as;
 };
 
-// =====================
-// Symbols
-// =====================
 
 typedef enum {
     SYM_VAR,
@@ -97,9 +91,6 @@ typedef struct {
     Type* current_return_type;
 } SemContext;
 
-// =====================
-// API
-// =====================
 
 void sem_init(SemContext* ctx);
 void sem_free(SemContext* ctx);

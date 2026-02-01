@@ -7,9 +7,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-// =====================
-// Utilities
-// =====================
 
 static Token* cur(Parser* p) {
     if (p->pos >= p->count) return &p->tokens[p->count - 1];
@@ -22,12 +19,6 @@ static Token* prev(Parser* p) {
     return &p->tokens[i];
 }
 
-static Token* peek_n(Parser* p, int n) {
-    int i = p->pos + n;
-    if (i < 0) i = 0;
-    if (i >= p->count) i = p->count - 1;
-    return &p->tokens[i];
-}
 
 static bool at(Parser* p, TokenType t) { return cur(p)->type == t; }
 static bool is_eof(Parser* p) { return at(p, TOK_EOF); }
@@ -102,9 +93,7 @@ static bool is_return_terminator(Parser* p) {
            t == TOK_EOF;
 }
 
-// =====================
-// Forward decls
-// =====================
+
 
 static ASTNode* parse_declaration(Parser* p);
 static ASTNode* parse_type(Parser* p);
@@ -147,9 +136,8 @@ static ASTNode* parse_expr_unary(Parser* p);
 static ASTNode* parse_expr_postfix(Parser* p);
 static ASTNode* parse_expr_primary(Parser* p);
 
-// =====================
+
 // Parser API
-// =====================
 
 void parser_init(Parser* p, Token* tokens, int count) {
     p->tokens = tokens;
@@ -168,9 +156,8 @@ void parser_free(Parser* p) {
     p->err_cap = 0;
 }
 
-// =====================
+
 // Grammar
-// =====================
 
 ASTNode* parse_program(Parser* p) {
     // Algorithme ID
@@ -237,9 +224,7 @@ ASTNode* parse_program(Parser* p) {
     return prog;
 }
 
-// =====================
 // Declarations
-// =====================
 
 static ASTNode* parse_declaration(Parser* p) {
     // name ':' (Variable Type | Constante Type '=' expr | Tableau Type dims)
@@ -284,7 +269,7 @@ static ASTNode* parse_declaration(Parser* p) {
     return NULL;
 }
 
-// ✅ Objets: optionnel dans les fonctions/procédures (avant Début)
+//  Objets: optionnel dans les fonctions/procédures (avant Début)
 static void parse_optional_local_objets(Parser* p, ASTList* out_decls) {
     ast_list_init(out_decls);
 
@@ -329,7 +314,7 @@ static ASTNode* prepend_decls_to_block(ASTList* decls, ASTNode* body) {
     return merged;
 }
 
-// ✅ parse_type() accepte maintenant "Tableau entier[]" comme type paramètre
+//  parse_type() accepte maintenant "Tableau entier[]" comme type paramètre
 static ASTNode* parse_type(Parser* p) {
     Token* t = cur(p);
     int line = t->ligne, col = t->colonne;
@@ -340,7 +325,7 @@ static ASTNode* parse_type(Parser* p) {
     if (match(p, TOK_CHAINE))    return ast_new_type_primitive(TYPE_CHAINE, line, col);
     if (match(p, TOK_BOOLEEN))   return ast_new_type_primitive(TYPE_BOOLEEN, line, col);
 
-    // ✅ Type tableau
+    //  Type tableau
     if (match(p, TOK_TABLEAU)) {
         Token* kw = prev(p);
         ASTNode* elem = parse_type(p);
@@ -373,9 +358,7 @@ static ASTNode* parse_type(Parser* p) {
     return ast_new_type_named("<?>", line, col);
 }
 
-// =====================
 // Definitions
-// =====================
 
 static ASTNode* parse_def_struct(Parser* p) {
     Token* kw = cur(p);
@@ -443,7 +426,7 @@ static ASTNode* parse_def_func(Parser* p) {
 
     skip_fin_instr(p);
 
-    // ✅ Objets: optionnel avant Début
+    // Objets: optionnel avant Début
     ASTList localDecls;
     parse_optional_local_objets(p, &localDecls);
 
@@ -484,7 +467,7 @@ static ASTNode* parse_def_proc(Parser* p) {
 
     skip_fin_instr(p);
 
-    // ✅ Objets: optionnel AVANT Début (fix)
+    // Objets: optionnel AVANT Début (fix)
     ASTList localDecls;
     parse_optional_local_objets(p, &localDecls);
 
@@ -523,9 +506,7 @@ static ASTNode* parse_block_until(Parser* p, TokenType stop1, TokenType stop2, T
     return b;
 }
 
-// =====================
 // Statements
-// =====================
 
 static ASTNode* parse_statement(Parser* p) {
     Token* t = cur(p);
@@ -720,9 +701,7 @@ static ASTNode* parse_stmt_repeat(Parser* p) {
     return ast_new_repeat(body, until_cond, kw->ligne, kw->colonne);
 }
 
-// =====================
 // SELON / CAS / DEFAUT
-// =====================
 
 static ASTNode* parse_stmt_switch(Parser* p) {
     Token* kw = cur(p);
@@ -779,9 +758,7 @@ static ASTNode* parse_stmt_switch(Parser* p) {
     return sw;
 }
 
-// =====================
 // Lvalue + expressions
-// =====================
 
 static ASTNode* parse_lvalue(Parser* p) {
     Token* id = cur(p);

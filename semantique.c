@@ -4,9 +4,6 @@
 #include <string.h>
 #include <stdarg.h>
 
-// =====================
-// small helpers
-// =====================
 
 static char* sdup(const char* s) {
     if (!s) return NULL;
@@ -50,13 +47,11 @@ void sem_print_errors(SemContext* ctx) {
     }
     printf("=== Erreurs sémantiques (%d) ===\n", ctx->err_count);
     for (int i = 0; i < ctx->err_count; i++) {
-        printf("%s\n", ctx->errors[i]);
+        printf(" %s\n", ctx->errors[i]);
     }
 }
 
-// =====================
-// Type constructors / comparisons
-// =====================
+// Construction / comparaison des types
 
 static Type* type_new(TypeKind k) {
     Type* t = (Type*)calloc(1, sizeof(Type));
@@ -114,13 +109,13 @@ static bool type_assignable(Type* dst, Type* src) {
 
     if (type_equal(dst, src)) return true;
 
-    // implicit int -> real
+    // Conversion implicite int -> real
     if (dst->kind == TY_REAL && (src->kind == TY_INT || src->kind == TY_CHAR || src->kind == TY_BOOL)) return true;
 
-    // char -> int
+    // Conversion char -> int
     if (dst->kind == TY_INT && src->kind == TY_CHAR) return true;
 
-    // bool -> int (optionnel)
+    // Conversion bool -> int (optionnel)
     if (dst->kind == TY_INT && src->kind == TY_BOOL) return true;
 
     return false;
@@ -133,9 +128,7 @@ static Type* type_decay_index(Type* base) {
     return type_make_array(base->as.array.elem, d - 1);
 }
 
-// =====================
-// Scopes / symbols
-// =====================
+// Gestion des scopes / symboles
 
 static Scope* scope_push(SemContext* ctx) {
     Scope* s = (Scope*)calloc(1, sizeof(Scope));
@@ -197,16 +190,13 @@ static Symbol* scope_add(Scope* s, const char* name) {
     return sym;
 }
 
-// =====================
-// Forward decls (IMPORTANT pour éviter implicit declaration)
-// =====================
+// Déclarations anticipées (pour éviter les "implicit declaration" en C)
+
 static void sem_declare_var(SemContext* ctx, ASTNode* decl);
 static void sem_declare_const(SemContext* ctx, ASTNode* decl);
 static void sem_declare_array(SemContext* ctx, ASTNode* decl);
 
-// =====================
-// Type from AST
-// =====================
+// Conversion AST(Type) -> Type*
 
 static Type* sem_type_from_ast(SemContext* ctx, ASTNode* type_node) {
     (void)ctx;
@@ -227,19 +217,16 @@ static Type* sem_type_from_ast(SemContext* ctx, ASTNode* type_node) {
         return type_make_struct(type_node->as.type_named.name);
     }
 
-    // ✅ FIX: dims est une ASTList => .count
     if (type_node->kind == AST_TYPE_ARRAY) {
         Type* elem = sem_type_from_ast(ctx, type_node->as.type_array.elem_type);
-        int dims = type_node->as.type_array.dims.count;  // ✅ FIX ICI
+        int dims = type_node->as.type_array.dims.count;
         return type_make_array(elem, dims);
     }
 
     return type_make_error();
 }
 
-// =====================
-// Const int evaluation (for array dims / case labels)
-// =====================
+// Évaluation de constantes entières (dimensions de tableaux / labels de cas)
 
 static bool sem_const_int_value(SemContext* ctx, ASTNode* expr, long long* out);
 
@@ -296,9 +283,7 @@ static bool sem_const_int_value(SemContext* ctx, ASTNode* expr, long long* out) 
     return false;
 }
 
-// =====================
-// Expression typing
-// =====================
+// Typage des expressions
 
 static bool is_lvalue(ASTNode* e) {
     if (!e) return false;
@@ -517,9 +502,7 @@ static Type* sem_expr(SemContext* ctx, ASTNode* expr) {
     }
 }
 
-// =====================
-// Statements + Blocks
-// =====================
+// Instructions + Blocs
 
 static void sem_stmt(SemContext* ctx, ASTNode* st);
 
@@ -534,7 +517,7 @@ static void sem_handle_decl(SemContext* ctx, ASTNode* d) {
     }
 }
 
-// ✅ NOUVEAU: chaque block = nouvelle portée + support decls locales
+// Chaque bloc = nouvelle portée + support des déclarations locales
 static void sem_block(SemContext* ctx, ASTNode* block) {
     if (!block || block->kind != AST_BLOCK) return;
 
@@ -555,7 +538,6 @@ static void sem_block(SemContext* ctx, ASTNode* block) {
     scope_pop(ctx);
 }
 
-
 static void sem_assign(SemContext* ctx, ASTNode* st) {
     ASTNode* target = st->as.assign.target;
     ASTNode* value  = st->as.assign.value;
@@ -564,7 +546,7 @@ static void sem_assign(SemContext* ctx, ASTNode* st) {
         sem_error(ctx, st, "Affectation: la cible n'est pas assignable (lvalue).");
     }
 
-    // forbid writing into const identifier
+    // Interdire l'écriture dans un identifiant constant
     if (target && target->kind == AST_IDENT) {
         Symbol* sym = scope_lookup(ctx->scope, target->as.ident.name);
         if (sym && sym->kind == SYM_CONST) {
@@ -588,7 +570,7 @@ static void sem_if(SemContext* ctx, ASTNode* st) {
 
     sem_block(ctx, st->as.if_stmt.then_block);
 
-    // elif_conds and elif_blocks are parallel lists
+    // elif_conds et elif_blocks sont deux listes parallèles
     int n = st->as.if_stmt.elif_conds.count;
     for (int i = 0; i < n; i++) {
         Type* ect = sem_expr(ctx, st->as.if_stmt.elif_conds.items[i]);
@@ -693,7 +675,7 @@ static void sem_read(SemContext* ctx, ASTNode* st) {
 }
 
 static void sem_call_stmt(SemContext* ctx, ASTNode* st) {
-    // it's AST_CALL_STMT containing AST_CALL expression
+    // C'est un AST_CALL_STMT qui contient une expression AST_CALL
     if (!st->as.call_stmt.call || st->as.call_stmt.call->kind != AST_CALL) {
         sem_error(ctx, st, "Appel (stmt): noeud invalide.");
         return;
@@ -722,8 +704,7 @@ static void sem_switch(SemContext* ctx, ASTNode* st) {
         sem_error(ctx, st, "Selon: expression doit être entière/compatible (entier, caractere, booleen).");
     }
 
-    // check case labels
-    // We will evaluate them as const int when possible and check duplicates.
+    // Vérifier les labels des "Cas" : constante entière + doublons
     long long* seen = NULL;
     int seen_count = 0, seen_cap = 0;
 
@@ -733,16 +714,16 @@ static void sem_switch(SemContext* ctx, ASTNode* st) {
         ASTNode* c = st->as.switch_stmt.cases.items[i];
         if (!c || c->kind != AST_CASE) continue;
 
-        // values
+        // Valeurs des labels de cas
         for (int j = 0; j < c->as.case_stmt.values.count; j++) {
             ASTNode* lab = c->as.case_stmt.values.items[j];
 
-            // must be constant
+            // Le label doit être une constante
             long long v;
             if (!sem_const_int_value(ctx, lab, &v)) {
                 sem_error(ctx, lab, "Cas: label doit être une constante entière (ou constante entière via ident).");
             } else {
-                // duplicates
+                // Détection des doublons
                 bool dup = false;
                 for (int k = 0; k < seen_count; k++) {
                     if (seen[k] == v) { dup = true; break; }
@@ -757,14 +738,14 @@ static void sem_switch(SemContext* ctx, ASTNode* st) {
                 if (seen && seen_count < seen_cap) seen[seen_count++] = v;
             }
 
-            // type compatibility (rough): label must be integral too
+            // Compatibilité de type (approximative) : label intégral
             Type* lt = sem_expr(ctx, lab);
             if (!type_is_integral(lt) && lt->kind != TY_ERROR) {
                 sem_error(ctx, lab, "Cas: label doit être entier/compatible.");
             }
         }
 
-        // body
+        // Corps du case
         sem_block(ctx, c->as.case_stmt.body);
     }
 
@@ -797,9 +778,7 @@ static void sem_stmt(SemContext* ctx, ASTNode* st) {
     }
 }
 
-// =====================
-// Decls / defs
-// =====================
+// Déclarations / définitions
 
 static void sem_declare_struct(SemContext* ctx, ASTNode* def) {
     const char* name = def->as.def_struct.name;
@@ -812,7 +791,7 @@ static void sem_declare_struct(SemContext* ctx, ASTNode* def) {
     sym->kind = SYM_STRUCT;
     sym->type = type_make_struct(name);
 
-    // we reuse (param_names/param_types/param_count) to store fields
+    // On réutilise (param_names/param_types/param_count) pour stocker les champs
     int fc = def->as.def_struct.fields.count;
     sym->param_count = fc;
     sym->param_names = (char**)calloc((size_t)fc, sizeof(char*));
@@ -823,7 +802,7 @@ static void sem_declare_struct(SemContext* ctx, ASTNode* def) {
         if (!f || f->kind != AST_FIELD) continue;
 
         const char* fname = f->as.field.name;
-        // duplicate field
+        // Champ dupliqué
         for (int j = 0; j < i; j++) {
             if (sym->param_names[j] && strcmp(sym->param_names[j], fname) == 0) {
                 sem_error(ctx, f, "Champ dupliqué '%s' dans structure '%s'.", fname, name);
@@ -846,7 +825,7 @@ static void sem_declare_var(SemContext* ctx, ASTNode* decl) {
     sym->kind = SYM_VAR;
     sym->type = sem_type_from_ast(ctx, decl->as.decl_var.type);
 
-    // named struct must exist
+    // Si c'est un type struct nommé, il doit exister
     if (decl->as.decl_var.type && decl->as.decl_var.type->kind == AST_TYPE_NAMED) {
         Symbol* st = lookup_struct_symbol(ctx, decl->as.decl_var.type->as.type_named.name);
         if (!st) sem_error(ctx, decl, "Type structure inconnu: '%s'.", decl->as.decl_var.type->as.type_named.name);
@@ -869,7 +848,7 @@ static void sem_declare_const(SemContext* ctx, ASTNode* decl) {
         sem_error(ctx, decl, "Constante '%s': valeur incompatible avec son type.", name);
     }
 
-    // precompute int value if possible
+    // Pré-calculer la valeur si c'est une constante entière
     long long v;
     if (sym->type && sym->type->kind == TY_INT) {
         if (sem_const_int_value(ctx, decl->as.decl_const.value, &v)) {
@@ -891,7 +870,7 @@ static void sem_declare_array(SemContext* ctx, ASTNode* decl) {
 
     Type* elem = sem_type_from_ast(ctx, decl->as.decl_array.elem_type);
 
-    // verify dims are constant int
+    // Vérifier que les dimensions sont des constantes entières
     for (int i = 0; i < dims; i++) {
         long long v;
         if (!sem_const_int_value(ctx, decl->as.decl_array.dims.items[i], &v)) {
@@ -905,7 +884,7 @@ static void sem_declare_array(SemContext* ctx, ASTNode* decl) {
     sym->kind = SYM_ARRAY;
     sym->type = type_make_array(elem, dims);
 
-    // named struct element must exist if elem is struct
+    // Si l'élément est un struct nommé, il doit exister
     if (decl->as.decl_array.elem_type && decl->as.decl_array.elem_type->kind == AST_TYPE_NAMED) {
         Symbol* st = lookup_struct_symbol(ctx, decl->as.decl_array.elem_type->as.type_named.name);
         if (!st) sem_error(ctx, decl, "Type structure inconnu: '%s'.", decl->as.decl_array.elem_type->as.type_named.name);
@@ -923,7 +902,7 @@ static void sem_predeclare_funcproc(SemContext* ctx, ASTNode* def, bool is_proc)
     Symbol* sym = scope_add(ctx->scope, name);
     sym->kind = is_proc ? SYM_PROC : SYM_FUNC;
 
-    // params
+    // Paramètres
     ASTList* params = is_proc ? &def->as.def_proc.params : &def->as.def_func.params;
     int pc = params->count;
 
@@ -937,7 +916,7 @@ static void sem_predeclare_funcproc(SemContext* ctx, ASTNode* def, bool is_proc)
         sym->param_names[i] = sdup(p->as.param.name);
         sym->param_types[i] = sem_type_from_ast(ctx, p->as.param.type);
 
-        // duplicate param name
+        // Paramètre dupliqué
         for (int j = 0; j < i; j++) {
             if (sym->param_names[j] && strcmp(sym->param_names[j], sym->param_names[i]) == 0) {
                 sem_error(ctx, p, "Paramètre dupliqué '%s' dans '%s'.", sym->param_names[i], name);
@@ -955,12 +934,12 @@ static void sem_predeclare_funcproc(SemContext* ctx, ASTNode* def, bool is_proc)
 }
 
 static void sem_check_funcproc_body(SemContext* ctx, ASTNode* def, bool is_proc) {
-    // new scope for parameters
+    // Nouvelle portée pour les paramètres
     scope_push(ctx);
 
     const char* name = is_proc ? def->as.def_proc.name : def->as.def_func.name;
 
-    // put params in scope
+    // Mettre les paramètres dans la portée
     ASTList* params = is_proc ? &def->as.def_proc.params : &def->as.def_func.params;
     for (int i = 0; i < params->count; i++) {
         ASTNode* p = params->items[i];
@@ -975,7 +954,7 @@ static void sem_check_funcproc_body(SemContext* ctx, ASTNode* def, bool is_proc)
         s->type = sem_type_from_ast(ctx, p->as.param.type);
     }
 
-    // set return context
+    // Configurer le contexte de retour
     bool old_in_func = ctx->in_function;
     bool old_in_proc = ctx->in_procedure;
     Type* old_ret = ctx->current_return_type;
@@ -988,7 +967,7 @@ static void sem_check_funcproc_body(SemContext* ctx, ASTNode* def, bool is_proc)
     if (!body) sem_error(ctx, def, "Corps manquant dans '%s'.", name);
     else sem_block(ctx, body);
 
-    // restore
+    // Restaurer
     ctx->in_function = old_in_func;
     ctx->in_procedure = old_in_proc;
     ctx->current_return_type = old_ret;
@@ -996,13 +975,11 @@ static void sem_check_funcproc_body(SemContext* ctx, ASTNode* def, bool is_proc)
     scope_pop(ctx);
 }
 
-// =====================
-// Public API
-// =====================
+// API publique
 
 void sem_init(SemContext* ctx) {
     memset(ctx, 0, sizeof(*ctx));
-    scope_push(ctx); // global
+    scope_push(ctx); // Scope globale
 }
 
 void sem_free(SemContext* ctx) {
@@ -1012,16 +989,12 @@ void sem_free(SemContext* ctx) {
 
     for (int i = 0; i < ctx->err_count; i++) free(ctx->errors[i]);
     free(ctx->errors);
-
-    // NOTE: we allocated some Type objects; the simplest strategy here is:
-    // we leaked some types intentionally to avoid double-free.
-    // If you want, next step: add type interning/refcounting.
 }
 
 bool sem_analyze_program(SemContext* ctx, ASTNode* program) {
     if (!ctx || !program || program->kind != AST_PROGRAM) return false;
 
-    // 1) predeclare structs first (so var types can reference them)
+    // 1) Déclarer les structures d'abord (pour que les types des variables puissent les référencer)
     for (int i = 0; i < program->as.program.defs.count; i++) {
         ASTNode* d = program->as.program.defs.items[i];
         if (d && d->kind == AST_DEF_STRUCT) {
@@ -1029,7 +1002,7 @@ bool sem_analyze_program(SemContext* ctx, ASTNode* program) {
         }
     }
 
-    // 2) declare globals (var/const/array)
+    // 2) Déclarer les globales (var/const/array)
     for (int i = 0; i < program->as.program.decls.count; i++) {
         ASTNode* d = program->as.program.decls.items[i];
         if (!d) continue;
@@ -1044,7 +1017,7 @@ bool sem_analyze_program(SemContext* ctx, ASTNode* program) {
         }
     }
 
-    // 3) predeclare funcs/procs
+    // 3) Pré-déclarer les fonctions/procédures
     for (int i = 0; i < program->as.program.defs.count; i++) {
         ASTNode* d = program->as.program.defs.items[i];
         if (!d) continue;
@@ -1052,7 +1025,7 @@ bool sem_analyze_program(SemContext* ctx, ASTNode* program) {
         else if (d->kind == AST_DEF_PROC) sem_predeclare_funcproc(ctx, d, true);
     }
 
-    // 4) check func/proc bodies
+    // 4) Vérifier les corps des fonctions/procédures
     for (int i = 0; i < program->as.program.defs.count; i++) {
         ASTNode* d = program->as.program.defs.items[i];
         if (!d) continue;
@@ -1060,11 +1033,11 @@ bool sem_analyze_program(SemContext* ctx, ASTNode* program) {
         else if (d->kind == AST_DEF_PROC) sem_check_funcproc_body(ctx, d, true);
     }
 
-    // 5) main block
+    // 5) Bloc principal
     if (!program->as.program.main_block) {
         sem_error(ctx, program, "Main block manquant.");
     } else {
-        // main is not in func/proc
+        // Le main n'est ni dans une fonction ni dans une procédure
         bool old_in_func = ctx->in_function;
         bool old_in_proc = ctx->in_procedure;
         Type* old_ret = ctx->current_return_type;
