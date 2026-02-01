@@ -21,7 +21,7 @@ typedef struct {
     char* nom_fichier;
     bool mode_strict;
 
-    // ✅ AJOUTS (pour gérer FIN_INSTR correctement)
+    // AJOUTS (pour gérer FIN_INSTR correctement)
     int paren_depth;    // profondeur des parenthèses ()
     int bracket_depth;  // profondeur des crochets []
 } Lexer;

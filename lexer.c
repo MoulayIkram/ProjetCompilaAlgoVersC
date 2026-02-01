@@ -6,9 +6,7 @@
 #include <ctype.h>
 #include <stdbool.h>
 
-// ============================================================================
 // PROTOTYPES DES FONCTIONS STATIQUES
-// ============================================================================
 
 static bool est_fin_source(Lexer* lexer);
 static char caractere_courant(Lexer* lexer);
@@ -32,7 +30,7 @@ static TokenType trouver_mot_cle(const char* mot, TokenType* type_erreur);
 
 static void lire_identifiant(Lexer* lexer);
 static void lire_nombre(Lexer* lexer);
-static void lire_nombre_commence_par_point(Lexer* lexer); // optionnel: ".5"
+static void lire_nombre_commence_par_point(Lexer* lexer);
 
 static void lire_chaine(Lexer* lexer);
 static void lire_commentaire_ligne(Lexer* lexer);
@@ -41,9 +39,7 @@ static void traiter_operateurs(Lexer* lexer);
 
 static bool doit_generer_fin_instr(Lexer* lexer);
 
-// ============================================================================
 // FONCTIONS STATIQUES AUXILIAIRES
-// ============================================================================
 
 static bool est_fin_source(Lexer* lexer) {
     return lexer->position >= (int)strlen(lexer->source);
@@ -103,9 +99,7 @@ static bool est_lettre(char c) {
     return false;
 }
 
-// ============================================================================
 // MOTS-CLES
-// ============================================================================
 
 typedef struct {
     const char* mot;
@@ -191,7 +185,7 @@ static const MotCle MOTS_CLES[] = {
 
     {"Selon", TOK_SELON, TOK_SELON_ERR},
     {"selon", TOK_SELON, TOK_SELON_ERR},
-        {"Cas", TOK_CAS, TOK_CAS_ERR},
+    {"Cas", TOK_CAS, TOK_CAS_ERR},
     {"cas", TOK_CAS, TOK_CAS_ERR},
 
     {"Défaut", TOK_DEFAUT, TOK_DEFAUT_ERR},
@@ -213,7 +207,6 @@ static const MotCle MOTS_CLES[] = {
     {"Jusqua", TOK_JUSQUA, TOK_JUSQUA_ERR},
     {"JusquA", TOK_JUSQUA, TOK_JUSQUA_ERR},
     {"JUSQUA", TOK_JUSQUA, TOK_JUSQUA_ERR},
-
 
     {"Répéter", TOK_REPETER, TOK_REPETER_ERR},
     {"repeter", TOK_REPETER, TOK_REPETER_ERR},
@@ -247,15 +240,13 @@ static const MotCle MOTS_CLES[] = {
     {NULL, TOK_ID, TOK_ID_ERR}
 };
 
-// ============================================================================
 // AJOUT TOKEN / ERREUR
-// ============================================================================
 
 static void ajouter_token(Lexer* lexer, TokenType type, const char* valeur) {
     if (lexer->nb_tokens >= lexer->capacite_tokens) {
         lexer->capacite_tokens *= 2;
         Token* tmp = realloc(lexer->tokens, lexer->capacite_tokens * sizeof(Token));
-        if (!tmp) return; // en cas d'échec: on abandonne silencieusement
+        if (!tmp) return;
         lexer->tokens = tmp;
     }
 
@@ -289,14 +280,12 @@ static void ajouter_erreur_lexicale(Lexer* lexer, TokenType type_erreur,
     (void)lexer;
 }
 
-// ============================================================================
 // ESPACES / FIN INSTRUCTION
-// ============================================================================
 
 static bool doit_generer_fin_instr(Lexer* lexer) {
     if (lexer->nb_tokens == 0) return false;
 
-    // pas de FIN_INSTR à l'intérieur de () ou []
+    // Pas de FIN_INSTR à l'intérieur de () ou []
     if (lexer->paren_depth > 0 || lexer->bracket_depth > 0) return false;
 
     Token* dernier = &lexer->tokens[lexer->nb_tokens - 1];
@@ -316,7 +305,7 @@ static void ignorer_espaces(Lexer* lexer) {
     }
 }
 
-// utile pour "Quitter Pour" : on ne saute pas les \n
+// Utile pour "Quitter Pour" : on ne saute pas les \n
 static void ignorer_espaces_sans_nl(Lexer* lexer) {
     while (!est_fin_source(lexer)) {
         char c = caractere_courant(lexer);
@@ -328,9 +317,7 @@ static void ignorer_espaces_sans_nl(Lexer* lexer) {
     }
 }
 
-// ============================================================================
 // MOTS-CLES
-// ============================================================================
 
 static TokenType trouver_mot_cle(const char* mot, TokenType* type_erreur) {
     for (int i = 0; MOTS_CLES[i].mot != NULL; i++) {
@@ -342,9 +329,7 @@ static TokenType trouver_mot_cle(const char* mot, TokenType* type_erreur) {
     return TOK_ID;
 }
 
-// ============================================================================
 // LECTURE IDENTIFIANT
-// ============================================================================
 
 static void lire_identifiant(Lexer* lexer) {
     int start_pos = lexer->position;
@@ -397,14 +382,13 @@ static void lire_identifiant(Lexer* lexer) {
             return;
         }
 
-        // sinon: rollback (on garde juste "Quitter")
+        // Sinon : retour en arrière (on garde juste "Quitter")
         lexer->position = sauvegarde_pos;
         lexer->ligne = sauvegarde_ligne;
         lexer->colonne = sauvegarde_col;
 
         free(suivant);
-        // Ici on laisse "Quitter" comme TOK_QUITTER_POUR (ton design actuel)
-        // Si tu veux un vrai TOK_QUITTER distinct, il faudra ajouter ce token.
+        // Ici on laisse "Quitter" comme TOK_QUITTER_POUR (design actuel).
     }
 
     if (type != TOK_ID) {
@@ -418,9 +402,8 @@ static void lire_identifiant(Lexer* lexer) {
     (void)start_col;
 }
 
-// ============================================================================
 // LECTURE NOMBRE : 1,5 ET 1.5
-// ============================================================================
+
 static void lire_nombre(Lexer* lexer) {
     int start_pos = lexer->position;
     bool est_reel = false;
@@ -437,7 +420,7 @@ static void lire_nombre(Lexer* lexer) {
 
     if ((c == ',' || c == '.') && est_chiffre(n)) {
         est_reel = true;
-        avancer(lexer, 1); // consomme ',' ou '.'
+        avancer(lexer, 1);
 
         // Partie fractionnaire
         while (!est_fin_source(lexer) && est_chiffre(caractere_courant(lexer))) {
@@ -463,11 +446,10 @@ static void lire_nombre(Lexer* lexer) {
     free(nombre);
 }
 
-
-// Optionnel: permet ".5" => TOK_CONST_REEL (si tu veux)
+// Lecture d'un réel du type ".5"
 static void lire_nombre_commence_par_point(Lexer* lexer) {
     int start_pos = lexer->position; // sur '.'
-    avancer(lexer, 1); // saute '.'
+    avancer(lexer, 1);
 
     while (!est_fin_source(lexer) && est_chiffre(caractere_courant(lexer))) {
         avancer(lexer, 1);
@@ -482,13 +464,11 @@ static void lire_nombre_commence_par_point(Lexer* lexer) {
     free(nombre);
 }
 
-// ============================================================================
 // CHAÎNES / COMMENTAIRES
-// ============================================================================
 
 static void lire_chaine(Lexer* lexer) {
     char delimiteur = caractere_courant(lexer);
-    avancer(lexer, 1); // saute guillemet ouvrant
+    avancer(lexer, 1);
 
     int start_pos = lexer->position;
     bool escape = false;
@@ -531,7 +511,7 @@ static void lire_chaine(Lexer* lexer) {
     ajouter_token(lexer, TOK_CONST_CHAINE, contenu);
     free(contenu);
 
-    avancer(lexer, 1); // saute guillemet fermant
+    avancer(lexer, 1);
 }
 
 static void lire_commentaire_ligne(Lexer* lexer) {
@@ -576,9 +556,7 @@ static void lire_commentaire_bloc(Lexer* lexer) {
     avancer(lexer, 2); // "*/"
 }
 
-// ============================================================================
 // OPÉRATEURS / SYMBOLES
-// ============================================================================
 
 static void traiter_operateurs(Lexer* lexer) {
     char courant = caractere_courant(lexer);
@@ -688,7 +666,7 @@ static void traiter_operateurs(Lexer* lexer) {
             break;
 
         case '.':
-            // Si tu veux accepter ".5" comme réel :
+            // Gestion du cas ".5" (réel)
             if (est_chiffre(suivant) && !est_chiffre(caractere_precedent(lexer))) {
                 lire_nombre_commence_par_point(lexer);
             } else {
@@ -711,9 +689,7 @@ static void traiter_operateurs(Lexer* lexer) {
     }
 }
 
-// ============================================================================
 // API PUBLIQUE
-// ============================================================================
 
 Lexer* creer_lexer(const char* source, const char* nom_fichier) {
     Lexer* lexer = (Lexer*)malloc(sizeof(Lexer));
@@ -782,10 +758,6 @@ bool analyser_lexicalement(Lexer* lexer) {
         traiter_operateurs(lexer);
     }
 
-    // fin de fichier : si la dernière ligne n'avait pas \n, tu peux choisir d'ajouter FIN_INSTR
-    // (optionnel) :
-    // if (doit_generer_fin_instr(lexer)) ajouter_token(lexer, TOK_FIN_INSTR, "");
-
     ajouter_token(lexer, TOK_EOF, "");
     return lexer->nb_erreurs == 0;
 }
@@ -841,13 +813,13 @@ void afficher_tokens(Lexer* lexer) {
     if (nb_err > 0) {
         printf("\n⚠ %d token(s) d'erreur détecté(s) dans le flux de tokens.\n", nb_err);
     } else {
-        printf("\n Aucun token d'erreur dans le flux.\n");
+        printf("\nAucun token d'erreur dans le flux.\n");
     }
 }
 
 void afficher_erreurs(Lexer* lexer) {
     if (lexer->nb_erreurs == 0) {
-        printf(" Aucune erreur lexicale détectée.\n");
+        printf("Aucune erreur lexicale détectée.\n");
         return;
     }
 
