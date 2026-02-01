@@ -297,9 +297,7 @@ ASTNode* ast_new_call(ASTNode* callee, int line, int col) {
     return n;
 }
 
-// =====================
-// Add helpers
-// =====================
+// Fonctions d'aide (ajout)
 
 void ast_block_add(ASTNode* block, ASTNode* stmt) {
     if (!block || block->kind != AST_BLOCK) return;
@@ -316,9 +314,7 @@ void ast_program_add_def(ASTNode* program, ASTNode* def) {
     ast_list_push(&program->as.program.defs, def);
 }
 
-// =====================
-// Free
-// =====================
+// Libération mémoire
 
 static void ast_free_list(ASTList* list) {
     for (int i = 0; i < list->count; i++) {
@@ -498,9 +494,7 @@ void ast_free(ASTNode* node) {
     free(node);
 }
 
-// =====================
-// Print (simple)
-// =====================
+// Affichage (simple)
 
 static void indent(int n) { for (int i = 0; i < n; i++) putchar(' '); }
 

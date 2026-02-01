@@ -4,9 +4,7 @@
 #include <stdbool.h>
 #include "token.h"
 
-// =====================
 // AST Types
-// =====================
 
 typedef enum {
     AST_PROGRAM,
