@@ -5,9 +5,7 @@
 #include <stdbool.h>
 #include <stdarg.h>
 
-// ============================================================================
 // Utilitaires de chaînes
-// ============================================================================
 
 static char* cgen_strdup(const char* s) {
     if (!s) return NULL;
@@ -54,9 +52,7 @@ static void str_free(Str* s) {
     free(s->data);
 }
 
-// ============================================================================
 // Système de Types (C-Type)
-// ============================================================================
 
 typedef enum { CT_UNKNOWN, CT_INT, CT_REAL, CT_BOOL, CT_CHAR, CT_STRING, CT_STRUCT, CT_ARRAY } CTypeKind;
 
@@ -89,9 +85,7 @@ static void ct_free(CType* t) {
     free(t);
 }
 
-// ============================================================================
 // Tables des Symboles
-// ============================================================================
 
 typedef struct { char* name; CType* type; } Sym;
 typedef struct { Sym* items; int count; int cap; } SymTab;
@@ -129,9 +123,7 @@ typedef struct {
     int scope_count;
 } CG;
 
-// ============================================================================
 // Helpers
-// ============================================================================
 
 static void emit_indent(CG* cg) { for(int i=0; i<cg->indent; i++) str_append(&cg->out, "    "); }
 static void emit_ln(CG* cg, const char* s) { emit_indent(cg); str_append(&cg->out, s); str_append(&cg->out, "\n"); }
@@ -211,9 +203,7 @@ static void emit_type_str(Str* out, CType* t) {
     }
 }
 
-// ============================================================================
 // Type Inference
-// ============================================================================
 
 static CType* infer_expr(CG* cg, ASTNode* e) {
     if (!e) return ct_new(CT_UNKNOWN);
@@ -266,9 +256,7 @@ static CType* infer_expr(CG* cg, ASTNode* e) {
     }
 }
 
-// ============================================================================
 // Émission de Code
-// ============================================================================
 
 static void emit_expr(CG* cg, ASTNode* e);
 
@@ -372,9 +360,7 @@ static void emit_expr(CG* cg, ASTNode* e) {
     }
 }
 
-// ============================================================================
 // Statements
-// ============================================================================
 
 static void emit_block(CG* cg, ASTNode* b);
 
