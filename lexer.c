@@ -316,7 +316,6 @@ static void ignorer_espaces_sans_nl(Lexer* lexer) {
         }
     }
 }
-
 // MOTS-CLES
 
 static TokenType trouver_mot_cle(const char* mot, TokenType* type_erreur) {
